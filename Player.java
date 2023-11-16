@@ -17,11 +17,16 @@ public class Player {
     int borderIndex;
     int discardsUsed;
     boolean capturedCapital;
+    // for metrics
+    int spellsUsed = 0; // non - terraform
+    int terraformsUsed = 0;
+    int unitsSummoned = 0;
+    int attacksDone = 0;
 
     Player(boolean isAI, Game currentGame) {
         deck = new Deck(false);
         units = new ArrayList<>();
-        manaCount = 10;
+        manaCount = 0;
         capitalHealth = 10;
         this.isAI = isAI;
         this.currentGame = currentGame;
@@ -323,6 +328,7 @@ public class Player {
 
         location.terrain = cardToTerrain.getOrDefault(card.label, randomTerrain);
         location.resetElementalStatus();
+        terraformsUsed++;
 
         System.out.println(" has been terraformed into a " + location.terrain);
 
@@ -361,6 +367,7 @@ public class Player {
     }
 
     void effect(Card card, Tile location) {
+        spellsUsed++;
         if (card.label.equals("FORCED SHUFFLE")) {
             currentGame.swapDeckAndDiscard();
         }
@@ -464,6 +471,7 @@ public class Player {
         if (location.occupiedBy != null) {
             int[] buffstats = cardToBuffs.getOrDefault(card.label, new int[] { 0, 0, 0 });
             location.occupiedBy.buff(buffstats[0], buffstats[1], buffstats[2]);
+            spellsUsed++;
         }
     }
 
@@ -497,6 +505,7 @@ public class Player {
     void summonUnit(Card card) {
         Unit unit = cardToUnit(card);
         units.add(unit);
+        unitsSummoned++;
     }
 
     Unit cardToUnit(Card card) {
@@ -520,6 +529,7 @@ public class Player {
     void attack(Unit unit, Tile location) {
         unit.currentMovementPoints = 0;
         unit.attackedThisTurn = true;
+        attacksDone++;
         if (currentGame.isCapitalTile(location)) {
             System.out.println(unit + " (" + this + ")" + " attacked the Capital!");
             opponent.capitalHealth -= unit.currentAttackPoints;

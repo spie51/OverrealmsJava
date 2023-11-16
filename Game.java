@@ -77,6 +77,17 @@ public class Game {
     }
 
     void endGame() {
+        System.out.print("\u001B[32m");
+        System.out.println("P1 Terraforms Done:" + player1.terraformsUsed);
+        System.out.println("P2 Terraforms Done:" + player2.terraformsUsed);
+        System.out.println("P1 Spells Done:" + player1.spellsUsed);
+        System.out.println("P2 Spells Done:" + player2.spellsUsed);
+        System.out.println("P1 Units Summoned:" + player1.unitsSummoned);
+        System.out.println("P2 Units Summoned:" + player2.unitsSummoned);
+        System.out.println("P1 Attacks Done:" + player1.attacksDone);
+        System.out.println("P2 Attacks Done:" + player2.attacksDone);
+        System.out.print("\u001B[0m");
+
         if (turn > 150) {
             System.out.println("Game taking too long!");
             return;
@@ -91,7 +102,9 @@ public class Game {
         System.out.println("\u001B[32m" + "GAME " + id);
         System.out.println("TURN " + turn + ": " + currentPlayer + "\u001B[0m");
         giveManaBonus();
-        handleDraw();
+        if (turn > 2) {
+            handleDraw();
+        }
         play();
 
         if (currentPlayer.capturedCapital || turn > 150) {
@@ -768,8 +781,9 @@ public class Game {
     }
 
     void giveManaBonus() {
-        currentPlayer.manaCount += board.getClaimedCount(currentPlayer);
-        currentPlayer.manaCount = Math.min(currentPlayer.manaCount, 10);
+        currentPlayer.manaCount++;
+        // currentPlayer.manaCount += board.getClaimedCount(currentPlayer);
+        // currentPlayer.manaCount = Math.min(currentPlayer.manaCount, 10);
     }
 
     void handleDraw() {
@@ -792,12 +806,12 @@ public class Game {
     }
 
     void giveInitialDecks() {
-        for (int i = 0; i < 4; i++) {
+        getInitialScoutCard(player1);
+        getInitialScoutCard(player2);
+        for (int i = 0; i < 3; i++) {
             player1.draw();
             player2.draw();
         }
-        getInitialScoutCard(player1);
-        getInitialScoutCard(player2);
     }
 
     void getInitialScoutCard(Player player) {
@@ -847,7 +861,7 @@ public class Game {
 
     public static void main(String[] args) {
         // run set amount of games
-        int gameCount = 1;
+        int gameCount = 50;
         int p1Wins = 0, p2Wins = 0;
         int failedGames = 0;
         double totalTurns = 0;
