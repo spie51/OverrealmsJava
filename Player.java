@@ -22,6 +22,7 @@ public class Player {
     int terraformsUsed = 0;
     int unitsSummoned = 0;
     int attacksDone = 0;
+    int attacksOnCapital = 0;
 
     Player(boolean isAI, Game currentGame) {
         deck = new Deck(false);
@@ -58,6 +59,7 @@ public class Player {
 
     double distanceToOppCapital(Tile tile, int modRow, int modCol, String newTerrain, Unit unit, boolean forAIMoves) {
         HashSet<Tile> seen = new HashSet<>();
+        HashMap<Tile, Double> memo = new HashMap<>();
 
         // System.out.println("Getting distance for " + unit);
 
@@ -65,15 +67,20 @@ public class Player {
         // double prevDistance = tile == null || tile.terrain.equals("Capital") ? 1.0 :
         // 0.0;
 
-        return dfs(tile, 0.0, seen, modRow, modCol, newTerrain, unit, forAIMoves);
+        return dfs(tile, 0.0, seen, modRow, modCol, newTerrain, unit, forAIMoves, memo);
     }
 
+    // public double[][] dijkstras(Tile tile, int modRow, modCol)
+
     double dfs(Tile tile, double prevDistance, HashSet<Tile> seen, int modRow, int modCol, String newTerrain,
-            Unit unit, boolean forAIMoves) {
+            Unit unit, boolean forAIMoves, HashMap<Tile, Double> memo) {
         double addOn = forAIMoves ? .09 : 0;
         double distance = 99999;
 
         if (!currentGame.isCapitalTile(tile)) {
+            // if (memo.containsKey(tile)) {
+            // return memo.get(tile);
+            // }
             if (tile.row == opponent.borderIndex) {
                 return prevDistance;
             }
@@ -89,11 +96,13 @@ public class Player {
                 distance = Math.min(distance,
                         dfs(neighbor,
                                 prevDistance + neighbor.calculateMovementCost(unit, modRow, modCol, newTerrain) + addOn,
-                                seen, modRow, modCol, newTerrain, unit, forAIMoves));
+                                seen, modRow, modCol, newTerrain, unit, forAIMoves, memo));
                 seen.remove(neighbor);
             }
         }
 
+        // memo.put(tile, Math.min(distance, memo.getOrDefault(tile, 99999.0)));
+        // System.out.println("Memoized " + tile + " + " + distance);
         return distance;
     }
 
@@ -173,12 +182,23 @@ public class Player {
         return list;
     }
 
+    ArrayList<Tile> summonLocations() {
+        ArrayList<Tile> list = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            Tile tile = currentGame.board.map[borderIndex][i];
+            if (!tile.terrain.equals("Mountains") && tile.occupiedBy == null) {
+                list.add(tile);
+            }
+        }
+        return list;
+    }
+
     ArrayList<Card> playableCards() {
         ArrayList<Card> list = new ArrayList<>();
 
         for (Card card : deck.cards) {
             if (manaCount >= card.manaCost) {
-                if (card.type.equals("Unit")) {
+                if (card.type.equals("Unit") && !summonLocations().isEmpty()) {
                     list.add(card);
                 } else if (card.isUniquelyPlayable()
                         || (card.label.equals("RESSURECTION") && !currentGame.graveyard.isEmpty())) {
@@ -485,8 +505,8 @@ public class Player {
             System.out.println("Cast spell " + card.label + " on " + (location == null ? "Undefined" : location));
         }
         if (card.type.equals("Unit")) {
-            System.out.println("Summoned a " + card.label);
-            summonUnit(card);
+            System.out.println("Summoned a " + card.label + " at " + location);
+            summonUnit(card, location);
         }
     }
 
@@ -502,9 +522,16 @@ public class Player {
         }
     }
 
-    void summonUnit(Card card) {
+    void summonUnit(Card card, Tile location) {
+        if (location == null) {
+            System.out.println("Invalid summon attempt");
+            return;
+        }
+
         Unit unit = cardToUnit(card);
         units.add(unit);
+        location.occupiedBy = unit;
+        unit.location = location;
         unitsSummoned++;
     }
 
@@ -533,6 +560,7 @@ public class Player {
         if (currentGame.isCapitalTile(location)) {
             System.out.println(unit + " (" + this + ")" + " attacked the Capital!");
             opponent.capitalHealth -= unit.currentAttackPoints;
+            attacksOnCapital++;
             if (opponent.capitalHealth <= 0) {
                 capturedCapital = true;
             }

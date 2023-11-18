@@ -86,6 +86,8 @@ public class Game {
         System.out.println("P2 Units Summoned:" + player2.unitsSummoned);
         System.out.println("P1 Attacks Done:" + player1.attacksDone);
         System.out.println("P2 Attacks Done:" + player2.attacksDone);
+        System.out.println("P1 Attacks On Capital:" + player1.attacksOnCapital);
+        System.out.println("P2 Attacks On Capital:" + player2.attacksOnCapital);
         System.out.print("\u001B[0m");
 
         if (turn > 150) {
@@ -166,9 +168,10 @@ public class Game {
         double bestCardScore = 0;
         double scoreThreshold = 10; // random ahh number
         // double distanceThresholdOverride = 11.0; // randomish ahh number
-        double impendingThreadingThreshold = 50.0;
+        double impendingThreatThreshold = 50.0;
+        boolean inDanger = currentPlayer.opponent.totalThreatLevel(-1, -1, null) > impendingThreatThreshold;
         if (currentPlayer.units.size() < 2
-                && currentPlayer.opponent.totalThreatLevel(-1, -1, null) < impendingThreadingThreshold) {
+                && !inDanger) {
             System.out.println("No need for spells right now");
             return;
         }
@@ -198,7 +201,9 @@ public class Game {
             }
         }
 
-        if (bestCard != null) {
+        boolean needsToTerraform = currentPlayer.avgDistToOppCapital(-1, -1, null) > 10.0;
+
+        if (bestCard != null && (!needsToTerraform || inDanger)) {
             System.out.println("Best spell to use seems to be " + bestCard.label);
             if (bestCardScore > scoreThreshold) {
                 currentPlayer.useCard(bestCard, bestCardTarget);
@@ -388,9 +393,10 @@ public class Game {
         double farFromCapitalThreshold = 10.0;
         boolean isFarFromCapital = currentPlayer.distanceToOppCapital(unit.location, -1, -1, null, unit,
                 false) > farFromCapitalThreshold;
-        boolean canCaptureCurrentTile = (unit.location.claimedBy == null
-                || !unit.location.claimedBy.equals(currentPlayer))
-                && board.isConnectedToCapital(unit.location, currentPlayer);
+        // boolean canCaptureCurrentTile = (unit.location.claimedBy == null
+        // || !unit.location.claimedBy.equals(currentPlayer))
+        // && board.isConnectedToCapital(unit.location, currentPlayer);
+        boolean canCaptureCurrentTile = false;
         boolean isWeakerUnit = unit.threatLevel(-1, -1, null) < isThreatToOpponentThreshold;
 
         if ((isWeakerUnit || isFarFromCapital) && canCaptureCurrentTile) {
@@ -419,9 +425,33 @@ public class Game {
     // early game = not a lot of captured tiles - want to deploy scout units
     // mid/late game = - want to deploy biggest threat
 
+    // 11/18 - always deploy if possible as close to the opposing capital as
+    // possible
+
+    Tile findBestSummonLocation(Unit u) {
+        Tile bestLocation = null;
+        double currentDistance = 9999.0;
+        ArrayList<Tile> summonLocations = currentPlayer.summonLocations();
+
+        for (Tile tile : summonLocations) {
+            double distance = currentPlayer.distanceToOppCapital(tile, -1, -1, null, null, false);
+            System.out.println("Distance from " + tile + " to capital is " + distance);
+            if (distance < currentDistance) {
+                System.out.println("Modifying");
+                currentDistance = distance;
+                bestLocation = tile;
+            }
+        }
+
+        return bestLocation;
+    }
+
     void deployPhase() {
         ArrayList<Card> playableUnitCards = currentPlayer.filterPlayableCardsByType("Unit");
+        ArrayList<Tile> summonLocations = currentPlayer.summonLocations();
+
         Card bestCard = null;
+        Tile bestLocation = null;
         double bestCardScore = -1 * Double.MAX_VALUE;
         double manaDelta = 0.05; // random ahh number
         // double threshold = 1.3; // random ahh number
@@ -430,6 +460,10 @@ public class Game {
         if (playableUnitCards.isEmpty()) {
             System.out.println(currentPlayer + " has no unit cards!");
             return;
+        }
+
+        if (summonLocations.isEmpty()) {
+            System.out.println("Nowhere to summon to!");
         }
 
         if (currentPlayer.manaCount < 5 && currentPlayer.units.size() > 5) {
@@ -444,23 +478,29 @@ public class Game {
 
         for (Card card : playableUnitCards) {
             Unit unit = currentPlayer.cardToUnit(card);
+            Tile location = findBestSummonLocation(unit);
+            unit.location = location;
             double threatLevel = unit.threatLevel(-1, -1, null);
-            double manaLoss = card.manaCost - board.getClaimedCount(currentPlayer);
+            double manaLoss = card.manaCost;
+            // double manaLoss = card.manaCost - board.getClaimedCount(currentPlayer);
             double score = threatLevel * (1 - manaLoss * manaDelta);
             System.out.println("[DEBUGGING DEPLOY PHASE] " + unit + " Score = " + score);
             if (score > bestCardScore) {
                 bestCard = card;
+                bestLocation = location;
                 bestCardScore = score;
             }
 
         }
         if (bestCard != null) {
             System.out
-                    .println("The best unit to summon appears to be " + bestCard + " with a score of " + bestCardScore);
+                    .println("The best unit to summon appears to be "
+                            + bestCard + " at " + bestLocation
+                            + " with a score of " + bestCardScore);
         }
         if (bestCard != null) {
             // need to figure out threshold logic
-            currentPlayer.useCard(bestCard, null);
+            currentPlayer.useCard(bestCard, bestLocation);
             // might recall
         } else {
             System.out.println("Decided not to summon units!");
@@ -662,11 +702,12 @@ public class Game {
     }
 
     Tile selectCardTarget(Card card) {
-        if (card.type.equals("Unit") || card.isUniquelyPlayable()
+        if (card.isUniquelyPlayable()
                 || (card.label.equals("RESSURECTION") && !graveyard.isEmpty())) {
             return null;
         } else {
-            ArrayList<Tile> targets = currentPlayer.effectTargets(card);
+            ArrayList<Tile> targets = card.type.equals("Unit") ? currentPlayer.summonLocations()
+                    : currentPlayer.effectTargets(card);
             currentPlayer.printTileList(targets);
             // Scanner sc = new Scanner(System.in);
             int choice = sc.nextInt();
@@ -820,6 +861,7 @@ public class Game {
                 Card c = deck.cards.remove(i);
                 c.isInitialScoutCard = true;
                 player.deck.cards.add(c);
+                return;
             }
         }
     }
@@ -861,7 +903,7 @@ public class Game {
 
     public static void main(String[] args) {
         // run set amount of games
-        int gameCount = 50;
+        int gameCount = 1;
         int p1Wins = 0, p2Wins = 0;
         int failedGames = 0;
         double totalTurns = 0;
