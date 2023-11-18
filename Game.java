@@ -88,6 +88,10 @@ public class Game {
         System.out.println("P2 Attacks Done:" + player2.attacksDone);
         System.out.println("P1 Attacks On Capital:" + player1.attacksOnCapital);
         System.out.println("P2 Attacks On Capital:" + player2.attacksOnCapital);
+        System.out.println("P1 Damage:" + player1.damageDone);
+        System.out.println("P2 Damage:" + player2.damageDone);
+        System.out.println("P1 Units Defeated:" + player1.unitsDefeated);
+        System.out.println("P2 Units Defeated:" + player2.unitsDefeated);
         System.out.print("\u001B[0m");
 
         if (turn > 150) {
@@ -824,7 +828,7 @@ public class Game {
     void giveManaBonus() {
         currentPlayer.manaCount++;
         // currentPlayer.manaCount += board.getClaimedCount(currentPlayer);
-        // currentPlayer.manaCount = Math.min(currentPlayer.manaCount, 10);
+        currentPlayer.manaCount = Math.min(currentPlayer.manaCount, 10);
     }
 
     void handleDraw() {

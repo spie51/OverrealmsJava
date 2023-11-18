@@ -23,6 +23,8 @@ public class Player {
     int unitsSummoned = 0;
     int attacksDone = 0;
     int attacksOnCapital = 0;
+    int unitsDefeated = 0;
+    int damageDone = 0;
 
     Player(boolean isAI, Game currentGame) {
         deck = new Deck(false);
@@ -568,10 +570,12 @@ public class Player {
             System.out.println(unit + " (" + this + ")" + " attacked " + location.occupiedBy);
             location.occupiedBy.currentHitPoints -= unit.currentAttackPoints;
             if (location.occupiedBy.currentHitPoints <= 0) {
+                unitsDefeated++;
                 location.killInhabitingUnit();
                 moveUnit(unit, location);
             }
         }
+        damageDone += unit.currentAttackPoints;
     }
 
     void execute(Tile location, int threshold) {
