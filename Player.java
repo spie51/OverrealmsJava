@@ -186,8 +186,13 @@ public class Player {
 
     ArrayList<Tile> summonLocations() {
         ArrayList<Tile> list = new ArrayList<>();
-        for (int i = 0; i < 4; i++) {
-            Tile tile = currentGame.board.map[borderIndex][i];
+        int[][] p1Locations = new int[][] { { 1, 2 }, { 0, 1 }, { 0, 3 } };
+        int[][] p2Locations = new int[][] { { 3, 2 }, { 4, 1 }, { 4, 3 } };
+        int[][] locations = borderIndex == 0 ? p1Locations : p2Locations;
+
+        for (int i = 0; i < 3; i++) {
+            Tile tile = currentGame.board.map[locations[i][0]][locations[i][1]];
+            // Tile tile = currentGame.board.map[borderIndex][i];
             if (!tile.terrain.equals("Mountains") && tile.occupiedBy == null) {
                 list.add(tile);
             }

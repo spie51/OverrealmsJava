@@ -10,7 +10,9 @@ game logic
 - 5->4 starting cards x
 - cards summoned at capital-adjacent tiles x
 - proper deck balancing logic x
-- proper map generation logic
+- proper map generation logic (nah)
+- change map to 5x5 x?
+- change summoning to at nexus x?
 
 ai
 

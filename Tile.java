@@ -95,7 +95,7 @@ public class Tile {
         if (terrain.equals("Forest")) {
             return 1;
         }
-        if (terrain.equals("Mountains")) {
+        if (terrain.equals("Mountains") || terrain.equals("Nexus")) {
             // just a big number
             return 10;
         }

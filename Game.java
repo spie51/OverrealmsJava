@@ -36,7 +36,7 @@ public class Game {
         player1.opponent = player2;
         player1.borderIndex = 0;
         player2.opponent = player1;
-        player2.borderIndex = 5;
+        player2.borderIndex = 4;
         // generating less mountainous maps??
         // Board b = null;
         // double distanceCheck = 20;
@@ -819,7 +819,7 @@ public class Game {
             unit.adjustAfterTurn();
         }
 
-        board.handleCaptures(currentPlayer);
+        // board.handleCaptures(currentPlayer);
 
         turn++;
         currentPlayer = currentPlayer.opponent;
