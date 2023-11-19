@@ -253,7 +253,11 @@ public class Board {
 
         for (int i = 0; i < 5; i++) {
             for (int j = 0; j < 5; j++) {
-                map[i][j] = generateRandomTile(false, i, j, false);
+                if (i == 0 || i == 4) {
+                    map[i][j] = generateRandomTile(false, i, j, true);
+                } else {
+                    map[i][j] = generateRandomTile(false, i, j, false);
+                }
 
             }
         }

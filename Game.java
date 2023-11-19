@@ -907,7 +907,7 @@ public class Game {
 
     public static void main(String[] args) {
         // run set amount of games
-        int gameCount = 1;
+        int gameCount = 10;
         int p1Wins = 0, p2Wins = 0;
         int failedGames = 0;
         double totalTurns = 0;
